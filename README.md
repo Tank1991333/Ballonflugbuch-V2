@@ -1,22 +1,45 @@
 # Ballonflugbuch V2
 
-Erste integrierte V2 aus Flugbuch + Flugplanung.
+Eine einfache, offline-fähige Web-App zur Erfassung und Dokumentation von Ballonfahrten.
 
 ## Funktionen
-- Dashboard mit Flugstatistik
-- Flugplanung mit OpenStreetMap-Karte
-- GPS-Startpunkt und Ortssuche
-- Open-Meteo-Wetter
-- vereinfachte Wind-/Drift-Simulation
-- Live-GPS-Track mit Höhe, Geschwindigkeit, Distanz und Flugzeit
-- automatische Übernahme ins lokale Flugbuch
-- CSV- und JSON-Export
-- JSON-Import
-- Pilot/Ballon-Stammdaten
-- responsive iPhone-/Tablet-Oberfläche
 
-## Start
-`index.html` über einen lokalen Webserver oder Vercel bereitstellen. GPS funktioniert nur in einem sicheren Kontext (HTTPS oder localhost).
+- Flüge erfassen, bearbeiten und löschen
+- Automatische Berechnung der Flugdauer
+- GPS-Flugaufzeichnung
+- Berechnung der GPS-Strecke
+- Erfassung der maximalen Höhe
+- Flugbuch mit Suchfunktion
+- Filterung nach Jahr
+- CSV-Export für Excel
+- JSON-Datensicherung
+- Wiederherstellung einer JSON-Sicherung
+- Druckansicht und PDF-Ausgabe
+- Lokale Speicherung im Browser
+- Offline-Unterstützung durch einen Service Worker
 
-## Hinweis
-Die Wind-/Drift-Simulation ist eine technische V2-Demoberechnung und keine sicherheitsrelevante Flugprognose. Für den realen Betrieb sind offizielle Flugwetter- und Luftfahrtinformationen zu verwenden.
+## Datenspeicherung
+
+Die Flugdaten werden im LocalStorage des verwendeten Browsers gespeichert.
+
+Dadurch gilt:
+
+- Die Daten werden nicht automatisch zwischen Geräten synchronisiert.
+- Die Daten sind nur im jeweils verwendeten Browser vorhanden.
+- Beim Löschen der Browserdaten können die Flüge verloren gehen.
+- Deshalb sollte regelmäßig eine JSON-Sicherung erstellt werden.
+
+## GitHub Pages aktivieren
+
+1. Repository auf GitHub öffnen.
+2. Zu `Settings` wechseln.
+3. Links `Pages` auswählen.
+4. Unter `Build and deployment` die Option `Deploy from a branch` auswählen.
+5. Als Branch `main` einstellen.
+6. Als Verzeichnis `/ (root)` auswählen.
+7. Auf `Save` klicken.
+
+Die Web-App ist anschließend unter folgender Adresse erreichbar:
+
+```text
+https://DEIN-BENUTZERNAME.github.io/DEIN-REPOSITORY/
