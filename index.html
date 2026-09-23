@@ -1,0 +1,1446 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+
+  <meta name="theme-color" content="#0b4f6c">
+  <meta
+    name="description"
+    content="Offline-fähiges Ballonflugbuch mit Flugplanung, GPS-Aufzeichnung, CSV-Export und Datensicherung."
+  >
+
+  ./manifest.webmanifest
+
+  <title>Ballonflugbuch V2</title>
+
+  <style>
+    :root {
+      --background: #f4f7f9;
+      --card: #ffffff;
+      --text: #14212b;
+      --muted: #60717e;
+      --primary: #0b4f6c;
+      --primary-light: #0b6b86;
+      --danger: #b42318;
+      --success: #18794e;
+      --border: #dbe4ea;
+      --shadow: 0 8px 28px rgba(15, 50, 70, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.45;
+      background: var(--background);
+      color: var(--text);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 18px max(16px, calc((100vw - 1100px) / 2));
+      color: white;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      box-shadow: var(--shadow);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: clamp(1.3rem, 4vw, 2rem);
+    }
+
+    header p {
+      margin: 4px 0 0;
+      opacity: 0.86;
+    }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      padding-bottom: 2px;
+      overflow-x: auto;
+    }
+
+    .tab {
+      flex: 0 0 auto;
+      padding: 9px 13px;
+      color: white;
+      font: inherit;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+    }
+
+    .tab.active {
+      color: var(--primary);
+      font-weight: 700;
+      background: white;
+    }
+
+    main {
+      width: 100%;
+      max-width: 1100px;
+      margin: 22px auto;
+      padding: 0 16px 48px;
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      grid-column: span 12;
+      padding: 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    @media (min-width: 800px) {
+      .half {
+        grid-column: span 6;
+      }
+
+      .third {
+        grid-column: span 4;
+      }
+
+      .two-thirds {
+        grid-column: span 8;
+      }
+    }
+
+    h2,
+    h3 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: 650;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 11px 12px;
+      color: inherit;
+      font: inherit;
+      background: white;
+      border: 1px solid #b9c8d2;
+      border-radius: 10px;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    button,
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 11px 15px;
+      color: white;
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      background: var(--primary);
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    button:hover,
+    .button:hover {
+      filter: brightness(1.08);
+    }
+
+    button.secondary,
+    .button.secondary {
+      color: var(--primary);
+      background: #e7eef2;
+    }
+
+    button.danger {
+      background: var(--danger);
+    }
+
+    button.success {
+      background: var(--success);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      padding: 14px;
+      background: #eef5f7;
+      border-radius: 14px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.5rem;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .status {
+      margin: 10px 0;
+      padding: 10px 12px;
+      background: #eef5f7;
+      border-radius: 10px;
+    }
+
+    .status.success {
+      color: #075e3a;
+      background: #e7f6ee;
+    }
+
+    .status.error {
+      color: #8a1c13;
+      background: #fce8e6;
+    }
+
+    .scroll {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #edf3f6;
+    }
+
+    .empty {
+      padding: 30px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .track {
+      max-height: 250px;
+      padding: 10px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 0.85rem;
+      background: #f5f7f8;
+      border-radius: 10px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      color: var(--primary);
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: #e8f2f5;
+      border-radius: 999px;
+    }
+
+    footer {
+      padding: 22px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .print-only {
+      display: none;
+    }
+
+    @media print {
+      header nav,
+      .no-print,
+      .actions,
+      footer {
+        display: none !important;
+      }
+
+      .panel {
+        display: none !important;
+      }
+
+      #log {
+        display: block !important;
+      }
+
+      .card {
+        border: 0;
+        box-shadow: none;
+      }
+
+      .print-only {
+        display: block;
+      }
+
+      body {
+        background: white;
+      }
+
+      main {
+        max-width: none;
+        margin: 0;
+      }
+
+      .scroll {
+        overflow: visible;
+      }
+
+      table {
+        min-width: 0;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>🎈 Ballonflugbuch V2</h1>
+    <p>Planen, aufzeichnen und dokumentieren, lokal auf deinem Gerät.</p>
+
+    <nav aria-label="Bereiche">
+      <button class="tab active" data-tab="plan">Flugplanung</button>
+      <button class="tab" data-tab="gps">GPS-Aufzeichnung</button>
+      <button class="tab" data-tab="log">Flugbuch</button>
+      <button class="tab" data-tab="data">Daten & Sicherung</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="plan" class="panel active">
+      <div class="grid">
+        <form id="flightForm" class="card two-thirds">
+          <h2>Flug erfassen</h2>
+
+          <input id="flightId" type="hidden">
+
+          <div class="row">
+            <div>
+              <label for="date">Datum</label>
+              <input id="date" type="date" required>
+            </div>
+
+            <div>
+              <label for="startTime">Startzeit</label>
+              <input id="startTime" type="time">
+            </div>
+
+            <div>
+              <label for="landingTime">Landezeit</label>
+              <input id="landingTime" type="time">
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="pilot">Pilot/in</label>
+              <input id="pilot" placeholder="Name">
+            </div>
+
+            <div>
+              <label for="balloon">Ballon / Kennzeichen</label>
+              <input id="balloon" placeholder="z. B. OE-ABC">
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="startPlace">Startplatz</label>
+              <input id="startPlace" required placeholder="Ort">
+            </div>
+
+            <div>
+              <label for="landingPlace">Landeplatz</label>
+              <input id="landingPlace" placeholder="Ort">
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="passengers">Passagiere</label>
+              <input id="passengers" type="number" min="0" value="0">
+            </div>
+
+            <div>
+              <label for="maxAltitude">Maximale Höhe (m)</label>
+              <input id="maxAltitude" type="number" min="0">
+            </div>
+
+            <div>
+              <label for="distance">Strecke (km)</label>
+              <input id="distance" type="number" min="0" step="0.01">
+            </div>
+          </div>
+
+          <h3>Wetter</h3>
+
+          <div class="row">
+            <div>
+              <label for="wind">Wind</label>
+              <input id="wind" placeholder="Richtung / Stärke">
+            </div>
+
+            <div>
+              <label for="temperature">Temperatur (°C)</label>
+              <input id="temperature" type="number" step="0.1">
+            </div>
+
+            <div>
+              <label for="weather">Wetterlage</label>
+              <input id="weather" placeholder="z. B. heiter">
+            </div>
+          </div>
+
+          <label for="notes">Notizen</label>
+          <textarea
+            id="notes"
+            placeholder="Besonderheiten, Freigaben und Beobachtungen"
+          ></textarea>
+
+          <div class="actions">
+            <button type="submit">Flug speichern</button>
+
+            <button id="resetForm" type="button" class="secondary">
+              Formular leeren
+            </button>
+
+            <button id="useGpsFlight" type="button" class="secondary">
+              GPS-Daten übernehmen
+            </button>
+          </div>
+        </form>
+
+        <div class="card third">
+          <h2>Übersicht</h2>
+
+          <div class="row">
+            <div class="stat">
+              <span class="muted">Flüge</span>
+              <strong id="statFlights">0</strong>
+            </div>
+
+            <div class="stat">
+              <span class="muted">Stunden</span>
+              <strong id="statHours">0,0</strong>
+            </div>
+
+            <div class="stat">
+              <span class="muted">Kilometer</span>
+              <strong id="statKm">0,0</strong>
+            </div>
+          </div>
+
+          <p class="muted">
+            Alle Daten bleiben lokal in diesem Browser. Erstelle regelmäßig
+            eine JSON-Sicherung.
+          </p>
+
+          <div id="planStatus" class="status">Bereit.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="gps" class="panel">
+      <div class="grid">
+        <div class="card half">
+          <h2>GPS-Flugaufzeichnung</h2>
+
+          <p class="muted">
+            Die Standortfreigabe und ein Gerät mit GPS sind erforderlich.
+            Für eine möglichst verlässliche Aufzeichnung sollte die Seite
+            während des Fluges geöffnet bleiben.
+          </p>
+
+          <div class="row">
+            <div class="stat">
+              <span class="muted">Dauer</span>
+              <strong id="gpsDuration">00:00:00</strong>
+            </div>
+
+            <div class="stat">
+              <span class="muted">Strecke</span>
+              <strong id="gpsDistance">0,00 km</strong>
+            </div>
+
+            <div class="stat">
+              <span class="muted">Maximale Höhe</span>
+              <strong id="gpsAltitude">–</strong>
+            </div>
+          </div>
+
+          <div id="gpsStatus" class="status">
+            Noch nicht gestartet.
+          </div>
+
+          <div class="actions">
+            <button id="gpsStart" class="success">
+              Aufzeichnung starten
+            </button>
+
+            <button id="gpsStop" class="danger" disabled>
+              Stoppen
+            </button>
+
+            <button id="gpsClear" class="secondary">
+              Zurücksetzen
+            </button>
+          </div>
+        </div>
+
+        <div class="card half">
+          <h2>Letzte Positionen</h2>
+
+          <div id="trackList" class="track">
+            Keine GPS-Punkte vorhanden.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="log" class="panel">
+      <div class="card">
+        <h2>Flugbuch</h2>
+
+        <div class="no-print row">
+          <div>
+            <label for="search">Suchen</label>
+            <input
+              id="search"
+              placeholder="Ort, Pilot/in oder Kennzeichen"
+            >
+          </div>
+
+          <div>
+            <label for="yearFilter">Jahr</label>
+            <select id="yearFilter">
+              <option value="">Alle Jahre</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions no-print">
+          <button id="printLog" class="secondary">
+            Drucken / als PDF speichern
+          </button>
+        </div>
+
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Zeiten</th>
+                <th>Route</th>
+                <th>Pilot / Ballon</th>
+                <th>Dauer</th>
+                <th>Strecke</th>
+                <th class="no-print">Aktionen</th>
+              </tr>
+            </thead>
+
+            <tbody id="flightRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="data" class="panel">
+      <div class="grid">
+        <div class="card half">
+          <h2>Export</h2>
+
+          <p>
+            Exportiere dein Flugbuch als CSV-Datei für Excel oder als
+            vollständige JSON-Sicherung.
+          </p>
+
+          <div class="actions">
+            <button id="exportCsv">CSV exportieren</button>
+
+            <button id="exportJson" class="secondary">
+              JSON-Sicherung
+            </button>
+          </div>
+        </div>
+
+        <div class="card half">
+          <h2>Import & Wartung</h2>
+
+          <label for="importFile">JSON-Sicherung auswählen</label>
+
+          <input
+            id="importFile"
+            type="file"
+            accept="application/json,.json"
+          >
+
+          <div class="actions">
+            <button id="importJson">Sicherung importieren</button>
+
+            <button id="deleteAll" class="danger">
+              Alle Daten löschen
+            </button>
+          </div>
+
+          <div id="dataStatus" class="status">
+            Keine Aktion ausgeführt.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Ballonflugbuch V2 · Lokale Datenspeicherung · Offline-Unterstützung
+  </footer>
+
+  <script>
+    "use strict";
+
+    const STORAGE_KEY = "ballonflugbuch_v2_flights";
+
+    let flights = loadFlights();
+    let gpsWatchId = null;
+    let gpsPoints = [];
+    let gpsStartedAt = null;
+    let gpsTimer = null;
+
+    const getElement = (id) => document.getElementById(id);
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (character) => {
+        const characters = {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#39;"
+        };
+
+        return characters[character];
+      });
+    }
+
+    function loadFlights() {
+      try {
+        const storedData = localStorage.getItem(STORAGE_KEY);
+        return storedData ? JSON.parse(storedData) : [];
+      } catch (error) {
+        console.error("Flugdaten konnten nicht geladen werden:", error);
+        return [];
+      }
+    }
+
+    function saveFlights() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(flights));
+      renderFlights();
+    }
+
+    function createId() {
+      if (crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+
+      return (
+        Date.now().toString(36) +
+        Math.random().toString(36).slice(2)
+      );
+    }
+
+    function calculateDuration(startTime, landingTime) {
+      if (!startTime || !landingTime) {
+        return 0;
+      }
+
+      const [startHour, startMinute] = startTime.split(":").map(Number);
+      const [landingHour, landingMinute] = landingTime.split(":").map(Number);
+
+      let minutes =
+        landingHour * 60 +
+        landingMinute -
+        startHour * 60 -
+        startMinute;
+
+      if (minutes < 0) {
+        minutes += 1440;
+      }
+
+      return minutes;
+    }
+
+    function formatDuration(minutes) {
+      if (!minutes) {
+        return "–";
+      }
+
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+
+      return `${hours} h ${remainingMinutes} min`;
+    }
+
+    function formatNumber(value, decimals = 1) {
+      return Number(value || 0).toLocaleString("de-AT", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+
+    function setStatus(elementId, message, type = "") {
+      const element = getElement(elementId);
+
+      element.textContent = message;
+      element.className = `status ${type}`.trim();
+    }
+
+    function getFormData() {
+      const fieldIds = [
+        "flightId",
+        "date",
+        "startTime",
+        "landingTime",
+        "pilot",
+        "balloon",
+        "startPlace",
+        "landingPlace",
+        "passengers",
+        "maxAltitude",
+        "distance",
+        "wind",
+        "temperature",
+        "weather",
+        "notes"
+      ];
+
+      return Object.fromEntries(
+        fieldIds.map((fieldId) => [
+          fieldId,
+          getElement(fieldId).value.trim()
+        ])
+      );
+    }
+
+    function resetFlightForm() {
+      getElement("flightForm").reset();
+      getElement("flightId").value = "";
+      getElement("passengers").value = 0;
+      getElement("date").value = new Date().toISOString().slice(0, 10);
+    }
+
+    getElement("flightForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const flight = getFormData();
+
+      flight.id = flight.flightId || createId();
+      delete flight.flightId;
+
+      flight.updatedAt = new Date().toISOString();
+
+      const existingIndex = flights.findIndex(
+        (existingFlight) => existingFlight.id === flight.id
+      );
+
+      if (existingIndex >= 0) {
+        flights[existingIndex] = flight;
+      } else {
+        flights.push(flight);
+      }
+
+      saveFlights();
+      resetFlightForm();
+
+      setStatus(
+        "planStatus",
+        "Der Flug wurde erfolgreich gespeichert.",
+        "success"
+      );
+    });
+
+    getElement("resetForm").addEventListener("click", () => {
+      resetFlightForm();
+      setStatus("planStatus", "Das Formular wurde zurückgesetzt.");
+    });
+
+    function editFlight(id) {
+      const flight = flights.find((item) => item.id === id);
+
+      if (!flight) {
+        return;
+      }
+
+      Object.entries(flight).forEach(([key, value]) => {
+        const element = getElement(key);
+
+        if (element) {
+          element.value = value ?? "";
+        }
+      });
+
+      getElement("flightId").value = id;
+
+      showTab("plan");
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+
+      setStatus(
+        "planStatus",
+        "Der Flug wird bearbeitet. Speichern überschreibt den Eintrag.",
+        "success"
+      );
+    }
+
+    function deleteFlight(id) {
+      const shouldDelete = window.confirm(
+        "Diesen Flug wirklich löschen?"
+      );
+
+      if (!shouldDelete) {
+        return;
+      }
+
+      flights = flights.filter((flight) => flight.id !== id);
+      saveFlights();
+    }
+
+    function renderFlights() {
+      const searchTerm = getElement("search").value.toLowerCase();
+      const selectedYear = getElement("yearFilter").value;
+
+      const filteredFlights = [...flights]
+        .sort((first, second) =>
+          (second.date || "").localeCompare(first.date || "")
+        )
+        .filter((flight) => {
+          const matchesYear =
+            !selectedYear ||
+            (flight.date || "").startsWith(selectedYear);
+
+          const matchesSearch = Object.values(flight).some((value) =>
+            String(value).toLowerCase().includes(searchTerm)
+          );
+
+          return matchesYear && matchesSearch;
+        });
+
+      const tableBody = getElement("flightRows");
+
+      if (!filteredFlights.length) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty">
+              Noch keine passenden Flüge gespeichert.
+            </td>
+          </tr>
+        `;
+      } else {
+        tableBody.innerHTML = filteredFlights
+          .map((flight) => {
+            const duration = calculateDuration(
+              flight.startTime,
+              flight.landingTime
+            );
+
+            return `
+              <tr>
+                <td>${escapeHtml(flight.date || "–")}</td>
+
+                <td>
+                  ${escapeHtml(flight.startTime || "–")}<br>
+                  ${escapeHtml(flight.landingTime || "–")}
+                </td>
+
+                <td>
+                  <strong>${escapeHtml(flight.startPlace || "–")}</strong><br>
+                  → ${escapeHtml(flight.landingPlace || "–")}
+                </td>
+
+                <td>
+                  ${escapeHtml(flight.pilot || "–")}<br>
+                  <span class="badge">
+                    ${escapeHtml(flight.balloon || "ohne Kennzeichen")}
+                  </span>
+                </td>
+
+                <td>${formatDuration(duration)}</td>
+
+                <td>
+                  ${
+                    flight.distance
+                      ? `${formatNumber(flight.distance, 2)} km`
+                      : "–"
+                  }
+                </td>
+
+                <td class="no-print">
+                  <button onclick="editFlight('${flight.id}')">
+                    Bearbeiten
+                  </button>
+
+                  <button
+                    class="danger"
+                    onclick="deleteFlight('${flight.id}')"
+                  >
+                    Löschen
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      const years = [
+        ...new Set(
+          flights
+            .map((flight) => (flight.date || "").slice(0, 4))
+            .filter(Boolean)
+        )
+      ].sort().reverse();
+
+      const currentYear = getElement("yearFilter").value;
+
+      getElement("yearFilter").innerHTML =
+        '<option value="">Alle Jahre</option>' +
+        years
+          .map(
+            (year) =>
+              `<option value="${year}" ${
+                year === currentYear ? "selected" : ""
+              }>${year}</option>`
+          )
+          .join("");
+
+      const totalMinutes = flights.reduce(
+        (sum, flight) =>
+          sum +
+          calculateDuration(flight.startTime, flight.landingTime),
+        0
+      );
+
+      const totalDistance = flights.reduce(
+        (sum, flight) => sum + Number(flight.distance || 0),
+        0
+      );
+
+      getElement("statFlights").textContent = flights.length;
+      getElement("statHours").textContent = formatNumber(
+        totalMinutes / 60,
+        1
+      );
+      getElement("statKm").textContent = formatNumber(
+        totalDistance,
+        1
+      );
+    }
+
+    getElement("search").addEventListener("input", renderFlights);
+    getElement("yearFilter").addEventListener("change", renderFlights);
+    getElement("printLog").addEventListener("click", () => window.print());
+
+    function showTab(tabId) {
+      document.querySelectorAll(".panel").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === tabId);
+      });
+
+      document.querySelectorAll(".tab").forEach((tabButton) => {
+        tabButton.classList.toggle(
+          "active",
+          tabButton.dataset.tab === tabId
+        );
+      });
+
+      if (tabId === "log") {
+        renderFlights();
+      }
+    }
+
+    document.querySelectorAll(".tab").forEach((tabButton) => {
+      tabButton.addEventListener("click", () => {
+        showTab(tabButton.dataset.tab);
+      });
+    });
+
+    function toRadians(value) {
+      return value * Math.PI / 180;
+    }
+
+    function calculateDistanceBetweenPoints(firstPoint, secondPoint) {
+      const earthRadius = 6371;
+
+      const latitudeDifference = toRadians(
+        secondPoint.latitude - firstPoint.latitude
+      );
+
+      const longitudeDifference = toRadians(
+        secondPoint.longitude - firstPoint.longitude
+      );
+
+      const calculation =
+        Math.sin(latitudeDifference / 2) ** 2 +
+        Math.cos(toRadians(firstPoint.latitude)) *
+          Math.cos(toRadians(secondPoint.latitude)) *
+          Math.sin(longitudeDifference / 2) ** 2;
+
+      return (
+        2 *
+        earthRadius *
+        Math.asin(Math.sqrt(calculation))
+      );
+    }
+
+    function calculateGpsDistance() {
+      return gpsPoints.slice(1).reduce(
+        (sum, point, index) =>
+          sum +
+          calculateDistanceBetweenPoints(
+            gpsPoints[index],
+            point
+          ),
+        0
+      );
+    }
+
+    function formatGpsTime(milliseconds) {
+      const totalSeconds = Math.floor(milliseconds / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      return [hours, minutes, seconds]
+        .map((value) => String(value).padStart(2, "0"))
+        .join(":");
+    }
+
+    function renderGpsData() {
+      const elapsedTime = gpsStartedAt
+        ? Date.now() - gpsStartedAt
+        : 0;
+
+      getElement("gpsDuration").textContent =
+        formatGpsTime(elapsedTime);
+
+      getElement("gpsDistance").textContent =
+        `${formatNumber(calculateGpsDistance(), 2)} km`;
+
+      const altitudes = gpsPoints
+        .map((point) => point.altitude)
+        .filter(Number.isFinite);
+
+      getElement("gpsAltitude").textContent =
+        altitudes.length
+          ? `${Math.round(Math.max(...altitudes))} m`
+          : "–";
+
+      if (!gpsPoints.length) {
+        getElement("trackList").textContent =
+          "Keine GPS-Punkte vorhanden.";
+
+        return;
+      }
+
+      getElement("trackList").innerHTML = gpsPoints
+        .slice(-20)
+        .reverse()
+        .map((point) => {
+          const time = new Date(point.timestamp).toLocaleTimeString(
+            "de-AT"
+          );
+
+          const altitude = Number.isFinite(point.altitude)
+            ? `${Math.round(point.altitude)} m`
+            : "Höhe –";
+
+          return `
+            ${time} ·
+            ${point.latitude.toFixed(5)},
+            ${point.longitude.toFixed(5)} ·
+            ${altitude}
+          `;
+        })
+        .join("<br>");
+    }
+
+    getElement("gpsStart").addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        setStatus(
+          "gpsStatus",
+          "GPS wird von diesem Browser nicht unterstützt.",
+          "error"
+        );
+
+        return;
+      }
+
+      gpsPoints = [];
+      gpsStartedAt = Date.now();
+
+      getElement("gpsStart").disabled = true;
+      getElement("gpsStop").disabled = false;
+
+      gpsTimer = window.setInterval(renderGpsData, 1000);
+
+      gpsWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+          gpsPoints.push({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            altitude: position.coords.altitude,
+            timestamp: position.timestamp,
+            accuracy: position.coords.accuracy
+          });
+
+          renderGpsData();
+
+          setStatus(
+            "gpsStatus",
+            `GPS aktiv · Genauigkeit ca. ${
+              Math.round(position.coords.accuracy)
+            } m`,
+            "success"
+          );
+        },
+        (error) => {
+          setStatus(
+            "gpsStatus",
+            `GPS-Fehler: ${error.message}`,
+            "error"
+          );
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 2000,
+          timeout: 15000
+        }
+      );
+    });
+
+    getElement("gpsStop").addEventListener("click", () => {
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+      }
+
+      gpsWatchId = null;
+
+      window.clearInterval(gpsTimer);
+
+      getElement("gpsStart").disabled = false;
+      getElement("gpsStop").disabled = true;
+
+      renderGpsData();
+
+      setStatus(
+        "gpsStatus",
+        "Aufzeichnung gestoppt. Die Daten können übernommen werden.",
+        "success"
+      );
+    });
+
+    getElement("gpsClear").addEventListener("click", () => {
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+      }
+
+      gpsWatchId = null;
+      gpsPoints = [];
+      gpsStartedAt = null;
+
+      window.clearInterval(gpsTimer);
+
+      getElement("gpsStart").disabled = false;
+      getElement("gpsStop").disabled = true;
+
+      renderGpsData();
+
+      setStatus(
+        "gpsStatus",
+        "Die GPS-Aufzeichnung wurde zurückgesetzt."
+      );
+    });
+
+    getElement("useGpsFlight").addEventListener("click", () => {
+      if (!gpsPoints.length) {
+        setStatus(
+          "planStatus",
+          "Keine GPS-Aufzeichnung vorhanden.",
+          "error"
+        );
+
+        return;
+      }
+
+      getElement("distance").value =
+        calculateGpsDistance().toFixed(2);
+
+      const altitudes = gpsPoints
+        .map((point) => point.altitude)
+        .filter(Number.isFinite);
+
+      if (altitudes.length) {
+        getElement("maxAltitude").value =
+          Math.round(Math.max(...altitudes));
+      }
+
+      const firstPointTime = new Date(gpsPoints[0].timestamp);
+      const lastPointTime = new Date(
+        gpsPoints[gpsPoints.length - 1].timestamp
+      );
+
+      getElement("date").value =
+        firstPointTime.toISOString().slice(0, 10);
+
+      getElement("startTime").value =
+        firstPointTime.toTimeString().slice(0, 5);
+
+      getElement("landingTime").value =
+        lastPointTime.toTimeString().slice(0, 5);
+
+      setStatus(
+        "planStatus",
+        "Die GPS-Daten wurden in das Formular übernommen.",
+        "success"
+      );
+    });
+
+    function downloadFile(filename, content, fileType) {
+      const blob = new Blob([content], {
+        type: fileType
+      });
+
+      const downloadUrl = URL.createObjectURL(blob);
+      const downloadLink = document.createElement("a");
+
+      downloadLink.href = downloadUrl;
+      downloadLink.download = filename;
+      downloadLink.click();
+
+      window.setTimeout(() => {
+        URL.revokeObjectURL(downloadUrl);
+      }, 1000);
+    }
+
+    getElement("exportCsv").addEventListener("click", () => {
+      const columnNames = [
+        "Datum",
+        "Startzeit",
+        "Landezeit",
+        "Pilot",
+        "Ballon",
+        "Startplatz",
+        "Landeplatz",
+        "Passagiere",
+        "Maximale_Hoehe_m",
+        "Strecke_km",
+        "Wind",
+        "Temperatur_C",
+        "Wetter",
+        "Notizen"
+      ];
+
+      const fieldNames = [
+        "date",
+        "startTime",
+        "landingTime",
+        "pilot",
+        "balloon",
+        "startPlace",
+        "landingPlace",
+        "passengers",
+        "maxAltitude",
+        "distance",
+        "wind",
+        "temperature",
+        "weather",
+        "notes"
+      ];
+
+      const quoteCsvValue = (value) =>
+        `"${String(value ?? "").replaceAll("\"", "\"\"")}"`;
+
+      const csvContent =
+        "\ufeff" +
+        columnNames.join(";") +
+        "\n" +
+        flights
+          .map((flight) =>
+            fieldNames
+              .map((fieldName) =>
+                quoteCsvValue(flight[fieldName])
+              )
+              .join(";")
+          )
+          .join("\n");
+
+      downloadFile(
+        "ballonflugbuch.csv",
+        csvContent,
+        "text/csv;charset=utf-8"
+      );
+    });
+
+    getElement("exportJson").addEventListener("click", () => {
+      const exportData = {
+        app: "Ballonflugbuch V2",
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        flights
+      };
+
+      const date = new Date().toISOString().slice(0, 10);
+
+      downloadFile(
+        `ballonflugbuch-sicherung-${date}.json`,
+        JSON.stringify(exportData, null, 2),
+        "application/json"
+      );
+    });
+
+    getElement("importJson").addEventListener("click", async () => {
+      const selectedFile = getElement("importFile").files[0];
+
+      if (!selectedFile) {
+        setStatus(
+          "dataStatus",
+          "Bitte zuerst eine JSON-Datei auswählen.",
+          "error"
+        );
+
+        return;
+      }
+
+      try {
+        const fileContent = await selectedFile.text();
+        const importedData = JSON.parse(fileContent);
+
+        const importedFlights = Array.isArray(importedData)
+          ? importedData
+          : importedData.flights;
+
+        if (!Array.isArray(importedFlights)) {
+          throw new Error("Keine gültige Flugliste gefunden.");
+        }
+
+        flights = importedFlights;
+        saveFlights();
+
+        setStatus(
+          "dataStatus",
+          `${importedFlights.length} Flüge wurden importiert.`,
+          "success"
+        );
+      } catch (error) {
+        setStatus(
+          "dataStatus",
+          `Import fehlgeschlagen: ${error.message}`,
+          "error"
+        );
+      }
+    });
+
+    getElement("deleteAll").addEventListener("click", () => {
+      const shouldDelete = window.confirm(
+        "Wirklich alle Flüge unwiderruflich löschen?"
+      );
+
+      if (!shouldDelete) {
+        return;
+      }
+
+      flights = [];
+      saveFlights();
+
+      setStatus(
+        "dataStatus",
+        "Alle lokalen Flugdaten wurden gelöscht.",
+        "success"
+      );
+    });
+
+    if (
+      "serviceWorker" in navigator &&
+      location.protocol.startsWith("http")
+    ) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("./service-worker.js")
+          .catch((error) => {
+            console.error(
+              "Service Worker konnte nicht registriert werden:",
+              error
+            );
+          });
+      });
+    }
+
+    resetFlightForm();
+    renderFlights();
+    renderGpsData();
+  </script>
+</body>
+</html>
